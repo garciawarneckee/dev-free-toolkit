@@ -1,0 +1,12 @@
+{
+  "name": "dev-free-toolkit",
+  "description": "Skills gratuitos para emprendedores y pymes que trabajan con proyectos hechos con IA.",
+  "owner": { "name": "garciawarneckee" },
+  "plugins": [
+    {
+      "name": "dev-free-toolkit",
+      "source": "./",
+      "description": "Skills gratuitos para emprendedores y pymes que trabajan con proyectos hechos con IA."
+    }
+  ]
+}

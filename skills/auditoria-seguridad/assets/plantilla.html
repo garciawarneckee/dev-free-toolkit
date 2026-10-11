@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnóstico de seguridad</title>
+<style>
+:root {
+  --fondo: #f4f3ef;
+  --superficie: #fcfcfb;
+  --borde: #e2e0d9;
+  --texto: #0b0b0b;
+  --texto-2: #52514e;
+  --texto-3: #77756f;
+  --bien: #0ca30c;
+  --atencion: #fab219;
+  --serio: #ec835a;
+  --critico: #d03b3b;
+  --bien-suave: #e3f4e1;
+  --atencion-suave: #fdf1d3;
+  --serio-suave: #fbe6dc;
+  --critico-suave: #f8dddb;
+  --celda-vacia: #f0efea;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fondo: #121211;
+    --superficie: #1a1a19;
+    --borde: #34332f;
+    --texto: #f0efec;
+    --texto-2: #c3c2b7;
+    --texto-3: #9a998f;
+    --bien-suave: #1d3a1c;
+    --atencion-suave: #3d3215;
+    --serio-suave: #40291f;
+    --critico-suave: #45201f;
+    --celda-vacia: #232321;
+  }
+}
+:root[data-theme="dark"] {
+  --fondo: #121211; --superficie: #1a1a19; --borde: #34332f;
+  --texto: #f0efec; --texto-2: #c3c2b7; --texto-3: #9a998f;
+  --bien-suave: #1d3a1c; --atencion-suave: #3d3215; --serio-suave: #40291f;
+  --critico-suave: #45201f; --celda-vacia: #232321;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--fondo); color: var(--texto);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+main { max-width: 960px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 1.9rem; line-height: 1.2; margin: 4px 0 8px; }
+h2 { font-size: 1.3rem; margin: 0 0 4px; }
+h3 { font-size: 1.1rem; margin: 0; line-height: 1.35; }
+p { margin: 0 0 8px; }
+.sub { color: var(--texto-2); }
+.meta { color: var(--texto-3); font-size: .9rem; }
+section { margin-top: 40px; }
+.tarjeta {
+  background: var(--superficie); border: 1px solid var(--borde);
+  border-radius: 12px; padding: 20px;
+}
+.hero { border-left: 8px solid var(--estado); }
+.hero .veredicto { font-size: 1.2rem; font-weight: 600; margin: 12px 0 0; }
+.estado-pill {
+  display: inline-flex; align-items: center; gap: 8px; font-weight: 700;
+  padding: 6px 14px; border-radius: 999px; background: var(--estado-suave);
+  border: 1px solid var(--estado); font-size: .95rem;
+}
+.punto { width: 12px; height: 12px; border-radius: 50%; background: var(--estado); flex: none; }
+.e-critico { --estado: var(--critico); --estado-suave: var(--critico-suave); }
+.e-serio { --estado: var(--serio); --estado-suave: var(--serio-suave); }
+.e-atencion { --estado: var(--atencion); --estado-suave: var(--atencion-suave); }
+.e-bien { --estado: var(--bien); --estado-suave: var(--bien-suave); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 16px; }
+.kpi { border-top: 4px solid var(--estado); }
+.kpi .numero { font-size: 2.4rem; font-weight: 700; line-height: 1; }
+.kpi .etiqueta { color: var(--texto-2); margin-top: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
+  border-radius: 999px; border: 1px solid var(--borde); background: var(--fondo);
+  font-size: .9rem;
+}
+.dos-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+
+.matriz-wrap { display: grid; grid-template-columns: auto 1fr; gap: 8px; margin-top: 16px; }
+.eje-y { writing-mode: vertical-rl; transform: rotate(180deg); text-align: center; color: var(--texto-2); font-size: .85rem; font-weight: 600; }
+.matriz { display: grid; grid-template-columns: 96px repeat(3, 1fr); gap: 2px; }
+.matriz .rot { display: flex; align-items: center; color: var(--texto-2); font-size: .85rem; padding-right: 8px; }
+.matriz .rot-x { text-align: center; color: var(--texto-2); font-size: .85rem; padding-top: 6px; }
+.celda {
+  min-height: 84px; border-radius: 6px; padding: 8px; display: flex; flex-wrap: wrap;
+  align-content: flex-start; gap: 6px; background: var(--celda-vacia);
+}
+.badge {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 40px; height: 32px;
+  padding: 0 10px; border-radius: 999px; font-weight: 700; font-size: .9rem; text-decoration: none;
+  color: var(--texto); background: var(--superficie); border: 2px solid var(--estado);
+}
+.badge:hover, .badge:focus-visible { background: var(--estado-suave); outline: none; }
+.eje-x { text-align: center; color: var(--texto-2); font-size: .85rem; font-weight: 600; grid-column: 2; }
+.leyenda { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; font-size: .85rem; color: var(--texto-2); }
+.leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+
+.riesgo { border-left: 6px solid var(--estado); margin-top: 12px; scroll-margin-top: 16px; }
+.riesgo:target { box-shadow: 0 0 0 3px var(--estado); }
+.riesgo-cab { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: flex-start; }
+.riesgo-cab h3 { flex: 1 1 360px; }
+.id { color: var(--texto-3); font-weight: 600; margin-right: 6px; }
+.riesgo dl { display: grid; grid-template-columns: 170px 1fr; gap: 8px 16px; margin: 16px 0 0; }
+.riesgo dt { color: var(--texto-2); font-size: .9rem; font-weight: 600; }
+.riesgo dd { margin: 0; }
+
+.plan { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 16px; }
+.plan .tarjeta { border-top: 4px solid var(--estado); }
+.plan ol { margin: 8px 0 0; padding-left: 20px; }
+.plan li { margin-bottom: 6px; }
+.vacio { color: var(--texto-3); font-style: italic; }
+.error { border-left: 6px solid var(--critico); }
+a { color: inherit; text-decoration-color: var(--texto-3); text-underline-offset: 3px; }
+ul.lista { margin: 8px 0 0; padding-left: 20px; }
+ul.lista li { margin-bottom: 4px; }
+footer { margin-top: 48px; color: var(--texto-2); font-size: .9rem; }
+.cta { margin-top: 16px; }
+.cta a { color: inherit; font-weight: 700; }
+
+@media (max-width: 600px) {
+  h1 { font-size: 1.5rem; }
+  .riesgo dl { grid-template-columns: 1fr; gap: 2px; }
+  .riesgo dd { margin-bottom: 10px; }
+  .matriz { grid-template-columns: 64px repeat(3, 1fr); }
+  .matriz .rot, .matriz .rot-x { font-size: .75rem; }
+}
+@media print {
+  body { background: #fff; }
+  main { padding: 0; }
+  .tarjeta { break-inside: avoid; }
+  .badge { border-width: 1px; }
+}
+</style>
+</head>
+<body>
+<main id="app"></main>
+
+<!-- MARCA: completá estos datos para que el pie de cada informe muestre tu nombre y un link de contacto. -->
+<script type="application/json" id="marca">
+{"nombre": "", "url": "", "texto_cta": ""}
+</script>
+
+<!-- DATOS: acá va el contenido de auditoria-seguridad.json, escribiendo cada "<" como <. -->
+<script type="application/json" id="datos">
+__DATOS__
+</script>
+
+<script>
+(function () {
+  var STATUS = { red: ["e-critico", "Riesgo alto"], yellow: ["e-atencion", "Riesgo moderado"], green: ["e-bien", "Riesgo bajo"] };
+  var URGENCY = {
+    now: ["e-critico", "Arreglar ya", "Arreglar ya"],
+    soon: ["e-serio", "En las próximas semanas", "Próximas semanas"],
+    later: ["e-atencion", "Cuando puedas", "Más adelante"]
+  };
+  var ACTOR = { insider: "Alguien de tu equipo", user: "Un usuario registrado", anyone: "Cualquiera en internet" };
+  var SEVERITY = { high: "Grave", medium: "Seria", low: "Menor" };
+  var IMPACTS = {
+    data: ["🔓", "Robo o filtración de datos"],
+    money: ["💸", "Pérdida de dinero"],
+    legal: ["⚖️", "Problemas legales o multas"],
+    reputation: ["📉", "Daño a tu reputación"],
+    outage: ["⛔", "La app deja de funcionar"],
+    takeover: ["🕹️", "Alguien toma el control"]
+  };
+  var EFFORT = { hours: "Unas horas", days: "Algunos días", weeks: "Varias semanas" };
+
+  function h(tag, attrs) {
+    var el = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) { el.setAttribute(k, attrs[k]); });
+    for (var i = 2; i < arguments.length; i++) {
+      [].concat(arguments[i]).forEach(function (c) {
+        if (c === null || c === undefined || c === false) return;
+        el.appendChild(typeof c === "string" || typeof c === "number" ? document.createTextNode(String(c)) : c);
+      });
+    }
+    return el;
+  }
+  function label(map, key, idx) { var v = map[key]; return v ? (idx === undefined ? v : v[idx]) : String(key); }
+  function pill(cls, text) { return h("span", { "class": "estado-pill " + cls }, h("span", { "class": "punto", "aria-hidden": "true" }), text); }
+  function chips(items) { return h("div", { "class": "chips" }, items.map(function (x) { return h("span", { "class": "chip" }, x); })); }
+  function list(items, empty) {
+    return items && items.length ? h("ul", { "class": "lista" }, items.map(function (x) { return h("li", null, x); })) : h("p", { "class": "vacio" }, empty);
+  }
+  function read(id) { return JSON.parse(document.getElementById(id).textContent); }
+
+  var app = document.getElementById("app");
+  var d, brand;
+  try { d = read("datos"); } catch (err) {
+    app.appendChild(h("section", { "class": "tarjeta error" }, h("h2", null, "No se pudo leer el informe"),
+      h("p", null, "El bloque de datos de esta página no es un JSON válido: " + err.message)));
+    return;
+  }
+  try { brand = read("marca"); } catch (err) { brand = {}; }
+
+  var risks = (d.risks || []).slice();
+  var u = Object.keys(URGENCY), s = Object.keys(SEVERITY), a = Object.keys(ACTOR).reverse();
+  function pos(arr, v) { var i = arr.indexOf(v); return i < 0 ? arr.length : i; }
+  risks.sort(function (x, y) {
+    return pos(u, x.urgency) - pos(u, y.urgency) || pos(s, x.severity) - pos(s, y.severity) || pos(a, x.actor) - pos(a, y.actor);
+  });
+  function count(urg) { return risks.filter(function (r) { return r.urgency === urg; }).length; }
+
+  document.title = "Seguridad — " + (d.project || "");
+  var st = STATUS[d.status] || ["", String(d.status)];
+
+  app.appendChild(h("header", { "class": "tarjeta hero " + st[0] },
+    h("p", { "class": "meta" }, "Diagnóstico de seguridad · " + (d.date || "")),
+    h("h1", null, d.project || ""),
+    pill("", st[1]),
+    h("p", { "class": "veredicto" }, d.verdict || "")));
+
+  app.appendChild(h("div", { "class": "kpis" }, u.map(function (k) {
+    var n = count(k);
+    return h("div", { "class": "tarjeta kpi " + URGENCY[k][0] }, h("div", { "class": "numero" }, n),
+      h("div", { "class": "etiqueta" }, (n === 1 ? "riesgo" : "riesgos") + " · " + URGENCY[k][1]));
+  })));
+
+  app.appendChild(h("section", { "class": "dos-col" },
+    h("div", { "class": "tarjeta" }, h("h2", null, "Qué hace tu app"), h("p", { "class": "sub" }, d.purpose || "")),
+    h("div", { "class": "tarjeta" }, h("h2", null, "Qué está en juego"),
+      (d.assets || []).length ? chips(d.assets) : h("p", { "class": "vacio" }, "Sin datos sensibles identificados."))));
+
+  if (risks.length) {
+    var cells = [];
+    s.forEach(function (sev) {
+      cells.push(h("div", { "class": "rot" }, SEVERITY[sev]));
+      Object.keys(ACTOR).forEach(function (act) {
+        cells.push(h("div", { "class": "celda" }, risks.filter(function (r) { return r.severity === sev && r.actor === act; }).map(function (r) {
+          return h("a", { "class": "badge " + label(URGENCY, r.urgency, 0), href: "#" + r.id, title: r.title }, r.id);
+        })));
+      });
+    });
+    cells.push(h("div"));
+    Object.keys(ACTOR).forEach(function (act) { cells.push(h("div", { "class": "rot-x" }, ACTOR[act])); });
+    app.appendChild(h("section", null,
+      h("h2", null, "Mapa de riesgos"),
+      h("p", { "class": "sub" }, "Arriba a la derecha está lo más peligroso: grave y al alcance de cualquiera. Tocá un riesgo para ver qué significa."),
+      h("div", { "class": "tarjeta" },
+        h("div", { "class": "matriz-wrap" },
+          h("div", { "class": "eje-y" }, "¿Qué tan grave sería?"),
+          h("div", { "class": "matriz", role: "img", "aria-label": "Matriz de riesgos según gravedad y quién podría aprovecharlos" }, cells),
+          h("div", { "class": "eje-x" }, "¿Quién podría aprovecharlo?")),
+        h("div", { "class": "leyenda" }, "El color de cada riesgo indica cuándo arreglarlo: ", u.map(function (k) {
+          return h("span", null, h("span", { "class": "punto " + URGENCY[k][0], "aria-hidden": "true" }), URGENCY[k][1]);
+        })))));
+
+    app.appendChild(h("section", null, h("h2", null, "Los riesgos, uno por uno"), risks.map(function (r) {
+      var urg = URGENCY[r.urgency] || ["", String(r.urgency)];
+      return h("article", { "class": "tarjeta riesgo " + urg[0], id: r.id },
+        h("div", { "class": "riesgo-cab" }, h("h3", null, h("span", { "class": "id" }, r.id), r.title), pill("", urg[1])),
+        h("dl", null,
+          h("dt", null, "Qué podría pasar"), h("dd", null, r.scenario || ""),
+          h("dt", null, "A quién afecta"), h("dd", null, chips(r.affects || [])),
+          h("dt", null, "Consecuencias"), h("dd", null, h("div", { "class": "chips" }, (r.impacts || []).map(function (i) {
+            var imp = IMPACTS[i] || ["", String(i)];
+            return h("span", { "class": "chip" }, h("span", { "aria-hidden": "true" }, imp[0]), imp[1]);
+          }))),
+          h("dt", null, "Quién podría hacerlo"), h("dd", null, label(ACTOR, r.actor)),
+          h("dt", null, "Arreglarlo lleva"), h("dd", null, label(EFFORT, r.effort))));
+    })));
+
+    app.appendChild(h("section", null, h("h2", null, "Plan de acción"), h("div", { "class": "plan" }, u.map(function (k) {
+      var items = risks.filter(function (r) { return r.urgency === k; });
+      return h("div", { "class": "tarjeta " + URGENCY[k][0] }, h("h3", null, URGENCY[k][2]),
+        items.length ? h("ol", null, items.map(function (r) { return h("li", null, h("a", { href: "#" + r.id }, r.title)); }))
+                     : h("p", { "class": "vacio" }, "Nada en esta etapa."));
+    }))));
+  } else {
+    app.appendChild(h("section", { "class": "tarjeta" }, h("h2", null, "Riesgos"), h("p", null, "No se encontraron riesgos relevantes en lo revisado.")));
+  }
+
+  app.appendChild(h("section", { "class": "dos-col" },
+    h("div", { "class": "tarjeta e-bien" }, h("h2", null, "✅ Lo que está bien hecho"), list(d.strengths, "Nada para destacar.")),
+    h("div", { "class": "tarjeta" }, h("h2", null, "🔎 Lo que no revisamos"), list(d.limitations, "Sin límites declarados."))));
+
+  var footer = h("footer", null, h("p", null, "El detalle técnico para quien haga los arreglos está en ", h("strong", null, "AUDITORIA-SEGURIDAD.md"), "."));
+  if (brand.texto_cta && /^https?:\/\//.test(brand.url || "")) {
+    footer.appendChild(h("p", { "class": "cta" }, brand.texto_cta + " ", h("a", { href: brand.url }, brand.nombre || brand.url)));
+  } else if (brand.nombre) {
+    footer.appendChild(h("p", { "class": "cta" }, "Diagnóstico hecho con el skill de " + brand.nombre + "."));
+  }
+  app.appendChild(footer);
+})();
+</script>
+</body>
+</html>
